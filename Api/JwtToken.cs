@@ -29,10 +29,7 @@ namespace Api
             var now = DateTimeOffset.UtcNow;
             var expires = now.AddMinutes(jwtExpires);
 
-            var combinedKey = $"{jwtKey}_{jti}";
-            var bytes = Encoding.UTF8.GetBytes(combinedKey);
-            var base64String = Convert.ToBase64String(bytes);
-            var keyBytes = Encoding.UTF8.GetBytes(base64String);
+            var keyBytes = Encoding.UTF8.GetBytes(jwtKey);
             var key = new byte[16]; // 128 bits key size
 
             if (keyBytes.Length >= 16)
@@ -70,23 +67,6 @@ namespace Api
 
             var token = new JwtSecurityTokenHandler().WriteToken(tokenOptions);
             return token;
-        }
-
-        public string? ExtractCombinedKey(string token)
-        {
-            var handler = new JwtSecurityTokenHandler();
-            var jwtToken = handler.ReadJwtToken(token);
-
-            var jtiClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Jti)?.Value;
-
-            if (string.IsNullOrEmpty(jtiClaim))
-            {
-                return null;
-            }
-
-            var combinedKey = $"{_jwtSetting.SigningKey}_{jtiClaim}";
-
-            return combinedKey;
         }
 
         public JwtTokenBuildDto? ExtractJwtTokenFromHeader(string token)

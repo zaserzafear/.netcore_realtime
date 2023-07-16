@@ -12,6 +12,7 @@ namespace Web
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
+
             builder.Services.AddSession(options =>
             {
                 options.IdleTimeout = TimeSpan.FromMinutes(builder.Configuration.GetValue<int>("Session:IdleTimeoutMinutes"));
@@ -47,6 +48,8 @@ namespace Web
             app.UseRouting();
 
             app.UseSession();
+
+            app.UseMiddleware<StatusCodeMiddleware>();
 
             app.UseAuthentication();
             app.UseAuthorization();

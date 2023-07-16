@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
@@ -36,7 +35,7 @@ namespace Api
             builder.Services.Configure<JwtSetting>(builder.Configuration.GetSection(nameof(JwtSetting)));
 
             builder.Services.AddSignalR();
-            builder.Services.AddSingleton<ConnectionManager>();
+            builder.Services.AddSingleton<ChatConnectionManager>();
 
             builder.Services.AddSingleton<JwtToken>();
             builder.Services.AddAuthentication(options =>
@@ -59,12 +58,7 @@ namespace Api
                         var handler = new JwtSecurityTokenHandler();
                         var jwtToken = handler.ReadJwtToken(token);
 
-                        var jtiClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Jti)?.Value;
-
-                        var combinedKey = $"{jwtSetting!.SigningKey}_{jtiClaim}";
-                        var bytes = Encoding.UTF8.GetBytes(combinedKey);
-                        var base64String = Convert.ToBase64String(bytes);
-                        var keyBytes = Encoding.UTF8.GetBytes(base64String);
+                        var keyBytes = Encoding.UTF8.GetBytes(jwtSetting!.SigningKey);
                         var key = new byte[16]; // 128 bits key size
 
                         if (keyBytes.Length >= 16)
@@ -99,7 +93,7 @@ namespace Api
 
             app.MapControllers();
 
-            app.MapHub<SignalRHub>("~/Hub");
+            app.MapHub<ChatHub>("~/ChatHub");
 
             app.Run();
         }

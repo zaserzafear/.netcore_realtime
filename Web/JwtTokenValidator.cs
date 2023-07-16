@@ -4,6 +4,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using Web.Dtos;
 using Web.Helper;
 
 namespace Web
@@ -27,20 +28,17 @@ namespace Web
             var response = _apiClient.SendRequestAsync(_jwtSetting.JwtTokenValidateUrl, HttpMethod.Get, null, token);
             var success = response.Result.success;
             var body = response.Result.body;
-
+            var authResponse = JsonSerializer.Deserialize<AuthResponse>(body)!;
             if (!success)
             {
-                throw new SecurityTokenValidationException(body);
+                throw new SecurityTokenValidationException(authResponse.error_message);
             }
 
-            var combinedKey = JsonSerializer.Deserialize<Dictionary<string, object>>(body)?["combinedKey"].ToString()!;
-            var newToken = JsonSerializer.Deserialize<Dictionary<string, object>>(body)?["newToken"].ToString()!;
+            var accessToken = authResponse.access_token;
             var session = _httpContextAccessor!.HttpContext!.Session;
-            session.SetString(_jwtSetting.AuthKey, newToken);
+            session.SetString(_jwtSetting.AuthKey, accessToken);
 
-            var bytes = Encoding.UTF8.GetBytes(combinedKey);
-            var base64String = Convert.ToBase64String(bytes);
-            var keyBytes = Encoding.UTF8.GetBytes(base64String);
+            var keyBytes = Encoding.UTF8.GetBytes(_jwtSetting.SigningKey);
             var key = new byte[16]; // 128 bits key size
 
             if (keyBytes.Length >= 16)

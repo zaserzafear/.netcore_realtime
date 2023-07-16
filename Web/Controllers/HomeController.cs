@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System.Diagnostics;
 using System.Text.Json;
@@ -10,6 +10,7 @@ using Web.Settings;
 
 namespace Web.Controllers
 {
+    [Authorize]
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
@@ -25,11 +26,18 @@ namespace Web.Controllers
             _jwtSetting = jwtSetting.Value;
         }
 
+        [AllowAnonymous]
         public IActionResult Index()
         {
+            if (!string.IsNullOrEmpty(HttpContext.Session.GetString(_jwtSetting.AuthKey)))
+            {
+                return RedirectToAction("Chat");
+            }
+
             return View();
         }
 
+        [AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> Login(string username, string password)
         {
@@ -57,20 +65,17 @@ namespace Web.Controllers
 
         public IActionResult Chat()
         {
-            if (!User.Identity!.IsAuthenticated)
-            {
-                return RedirectToAction("Index");
-            }
+            var authKey = HttpContext.Session.GetString(_jwtSetting.AuthKey);
+            ViewData["IsLoggedIn"] = !string.IsNullOrEmpty(authKey);
 
             return View();
         }
 
         [HttpGet]
-        [Route("chatHubUrl")]
         public IActionResult GetChatHubUrl()
         {
             var chatHubUrl = _serviceUrlSetting.ChatHub;
-            return Ok(chatHubUrl);
+            return Ok(new GetChatHubUrl { chatHubUrl = chatHubUrl });
         }
 
         private async Task<AuthResponse?> IsValidUser(string username, string password)

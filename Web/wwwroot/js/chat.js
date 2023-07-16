@@ -1,13 +1,13 @@
-﻿"use strict";
-
-document.getElementById("sendButton").disabled = true;
+﻿document.getElementById("sendButton").disabled = true;
 
 $.ajax({
-    url: '/chatHubUrl',
+    url: getChatHubUrl,
     type: 'GET',
     success: function (response) {
-        var chatHubUrl = response;
-        var connection = new signalR.HubConnectionBuilder().withUrl(chatHubUrl).build();
+        var chatHubUrl = response.chatHubUrl;
+        var connection = new signalR.HubConnectionBuilder()
+            .withUrl(chatHubUrl)
+            .build();
 
         connection.on("ReceiveMessage", function (user, message) {
             var li = document.createElement("li");
@@ -17,20 +17,68 @@ $.ajax({
 
         connection.start().then(function () {
             document.getElementById("sendButton").disabled = false;
+            var connectionId = connection.connectionId;
+            var data = {
+                connectionId: connectionId
+            };
+
+            $.ajax({
+                type: "POST",
+                url: setConnectionIdTouser,
+                data: JSON.stringify(data),
+                contentType: "application/json",
+                success: function (response) {
+                    console.log(response);
+                    var connectionId = response.connectionId;
+                },
+                error: function (xhr, status, error) {
+                    if (xhr.status === 401 || xhr.status === 403) {
+                        window.location.href = HomeIndexUrl;
+                    } else {
+                        console.error(xhr);
+                    }
+                }
+            });
         }).catch(function (err) {
             return console.error(err.toString());
         });
 
         document.getElementById("sendButton").addEventListener("click", function (event) {
-            var user = document.getElementById("userInput").value;
+            var sendToUserInput = document.getElementById("sendToUserInput").value;
             var message = document.getElementById("messageInput").value;
-            connection.invoke("SendMessage", user, message).catch(function (err) {
-                return console.error(err.toString());
+
+            var data = {
+                sendToUserInput: sendToUserInput,
+                message: message
+            };
+
+            $.ajax({
+                type: "POST",
+                url: sendMessage,
+                data: JSON.stringify(data),
+                contentType: "application/json",
+                success: function (response) {
+                    console.log(response);
+                    var receivedMessage = response.message;
+                    var connectionId = response.connectionId;
+                },
+                error: function (xhr, status, error) {
+                    if (xhr.status === 401 || xhr.status === 403) {
+                        window.location.href = homeIndexUrl;
+                    } else {
+                        console.error(xhr);
+                    }
+                }
             });
+
             event.preventDefault();
         });
     },
     error: function (xhr, status, error) {
-        console.error(error);
+        if (xhr.status === 401 || xhr.status === 403) {
+            window.location.href = homeIndexUrl;
+        } else {
+            console.error(xhr);
+        }
     }
 });

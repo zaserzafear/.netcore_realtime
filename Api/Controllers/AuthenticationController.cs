@@ -33,12 +33,13 @@ namespace Api.Controllers
 
             if (userMatch != null)
             {
-                authResponse.access_token = _jwtToken.GenerateJwtToken(new JwtTokenBuildDto
+                var accessToken = _jwtToken.GenerateJwtToken(new JwtTokenBuildDto
                 {
                     name = userMatch.username,
                     sub = userMatch.id.ToString(),
                 });
 
+                authResponse.access_token = accessToken;
                 return Ok(authResponse);
             }
             else
@@ -47,7 +48,6 @@ namespace Api.Controllers
                 return Unauthorized(authResponse);
             }
         }
-
 
         [HttpGet("ValidateToken")]
         public IActionResult ValidateToken([FromHeader(Name = "Authorization")] string authorizationHeader)
@@ -58,32 +58,26 @@ namespace Api.Controllers
             }
 
             var token = authorizationHeader.Substring("Bearer ".Length).Trim();
-            var combinedKey = _jwtToken.ExtractCombinedKey(token);
-
-            if (string.IsNullOrEmpty(combinedKey))
-            {
-                return BadRequest("Invalid token");
-            }
 
             var dto = _jwtToken.ExtractJwtTokenFromHeader(token);
+            var authResponse = new AuthResponse();
 
             if (dto == null)
             {
-                return BadRequest("Unable to extract token information");
+                authResponse.error_message = "Unable to extract token information";
+                return BadRequest(authResponse);
             }
 
-            var newToken = _jwtToken.GenerateJwtToken(dto);
+            var accessToken = _jwtToken.GenerateJwtToken(dto);
 
-            if (string.IsNullOrEmpty(newToken))
+            if (string.IsNullOrEmpty(accessToken))
             {
-                return BadRequest("Unable to generate new token");
+                authResponse.error_message = "Unable to generate new token";
+                return BadRequest(authResponse);
             }
 
-            return Ok(new
-            {
-                combinedKey = combinedKey,
-                newToken = newToken
-            });
+            authResponse.access_token = accessToken;
+            return Ok(authResponse);
         }
     }
 }

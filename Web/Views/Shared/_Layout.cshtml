@@ -9,6 +9,10 @@
     <link rel="stylesheet" href="~/Web.styles.css" asp-append-version="true" />
 </head>
 <body>
+    @{
+        var isLoggedIn = ViewData["IsLoggedIn"] as bool? ?? false;
+    }
+
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
@@ -25,6 +29,16 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Chat">Chat</a>
                         </li>
+                    </ul>
+                    <ul class="navbar-nav">
+                        @if (isLoggedIn)
+                        {
+                            <li class="nav-item">
+                                <form id="logoutForm" method="post" asp-area="" asp-controller="Home" asp-action="Logout">
+                                    <button type="submit" class="nav-link btn btn-link text-dark" id="logoutButton">Logout</button>
+                                </form>
+                            </li>
+                        }
                     </ul>
                 </div>
             </div>

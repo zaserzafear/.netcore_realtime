@@ -1,8 +1,8 @@
 ﻿@page
 <div class="container">
     <div class="row p-1">
-        <div class="col-1">User</div>
-        <div class="col-5"><input type="text" id="userInput" /></div>
+        <div class="col-1">Send To User Id</div>
+        <div class="col-5"><input type="text" id="sendToUserInput" /></div>
     </div>
     <div class="row p-1">
         <div class="col-1">Message</div>
@@ -24,6 +24,15 @@
         </div>
     </div>
 </div>
+<script>
+    document.getElementById("sendButton").disabled = true;
+    var getChatHubUrl = '@Url.Action("GetChatHubUrl", "Home")';
+    var setConnectionIdTouser = '@Url.Action("SetConnectionIdTouser", "Messages")';
+    var sendMessage = '@Url.Action("SendMessage", "Messages")';
+    var homeIndexUrl = '@Url.Action("Index", "Home")';
+</script>
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/js/signalr/dist/browser/signalr.js"></script>
-<script src="~/js/chat.js"></script>
+@{
+    <script src="~/js/chat.js"></script>
+}
