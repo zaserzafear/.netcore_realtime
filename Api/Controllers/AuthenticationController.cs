@@ -1,5 +1,4 @@
 ﻿using Api.Dtos;
-using Api.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,24 +10,19 @@ namespace Api.Controllers
     public class AuthenticationController : ControllerBase
     {
         private readonly JwtToken _jwtToken;
-        private readonly List<AuthModel> _usrList;
+        private readonly ChatDBContextReader _chatDBContextReader;
 
-        public AuthenticationController(JwtToken jwtToken)
+        public AuthenticationController(JwtToken jwtToken, ChatDBContextReader chatDBContextReader)
         {
             _jwtToken = jwtToken;
-
-            _usrList = new List<AuthModel>();
-            for (uint i = 1; i <= 5; i++)
-            {
-                _usrList.Add(new AuthModel { id = i, username = $"user{i}", password = $"password{i}" });
-            }
+            _chatDBContextReader = chatDBContextReader;
         }
 
         [AllowAnonymous]
         [HttpPost("Login")]
         public IActionResult Login([FromBody] AuthRequest auth)
         {
-            var userMatch = _usrList.FirstOrDefault(u => u.username == auth.username && u.password == auth.password);
+            var userMatch = _chatDBContextReader.tbl_users.FirstOrDefault(u => u.username == auth.username && u.password == auth.password);
             var authResponse = new AuthResponse();
 
             if (userMatch != null)
@@ -36,7 +30,7 @@ namespace Api.Controllers
                 var accessToken = _jwtToken.GenerateJwtToken(new JwtTokenBuildDto
                 {
                     name = userMatch.username,
-                    sub = userMatch.id.ToString(),
+                    sub = userMatch.user_id.ToString(),
                 });
 
                 authResponse.access_token = accessToken;

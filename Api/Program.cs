@@ -1,4 +1,6 @@
+using Api.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -25,6 +27,22 @@ namespace Api
                     .AllowAnyHeader()
                     .AllowCredentials();
                 });
+            });
+
+
+            var dbChat = builder.Configuration.GetSection(nameof(DatabaseChat)).Get<DatabaseChat>();
+
+            builder.Services.AddDbContext<ChatDBContext>(options =>
+            {
+                options.UseMySql(dbChat!.Writer, ServerVersion.Parse(dbChat.ServerVersion));
+            });
+            builder.Services.AddScoped<ChatDBContext>(provider =>
+            {
+                return new ChatDBContextWriter(dbChat!.Writer, dbChat.ServerVersion);
+            });
+            builder.Services.AddScoped<ChatDBContextReader>(provider =>
+            {
+                return new ChatDBContextReader(dbChat!.Reader, dbChat.ServerVersion);
             });
 
             builder.Services.AddControllers();
