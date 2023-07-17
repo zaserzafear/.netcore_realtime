@@ -29,7 +29,7 @@ namespace Api.Controllers
         }
 
         [HttpPost("SetConnectionIdTouser")]
-        public IActionResult SetConnectionIdTouser([FromHeader(Name = "Authorization")] string authorizationHeader, [FromBody] SignalRConnectionId signalRConnectionId)
+        public async Task<IActionResult> SetConnectionIdTouser([FromHeader(Name = "Authorization")] string authorizationHeader, [FromBody] SignalRConnectionId signalRConnectionId)
         {
             if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
             {
@@ -42,7 +42,7 @@ namespace Api.Controllers
             var userId = jwt.sub;
             var connectionId = signalRConnectionId.connectionId;
 
-            _connectionManager.AddConnection(connectionId, userId);
+            await _connectionManager.AddConnection(connectionId, userId);
 
             return Ok(signalRConnectionId);
         }
@@ -63,7 +63,7 @@ namespace Api.Controllers
             var sendToUser = messageDto.sendToUserInput;
             var message = messageDto.message;
 
-            var connectionIds = _connectionManager.GetConnectionsByUserId(sendToUser);
+            var connectionIds = await _connectionManager.GetConnectionsByUserId(sendToUser);
 
             var sendTasks = connectionIds.Select(connectionId =>
                 _hubContext.Clients.Client(connectionId).SendAsync("ReceiveMessage", userName, message));
@@ -74,10 +74,10 @@ namespace Api.Controllers
         }
 
         [HttpDelete("Disconnect")]
-        public IActionResult Disconnect(string connectionId)
+        public async Task<IActionResult> DisconnectAsync(string connectionId)
         {
-            var userId = _connectionManager.GetUserByConnectionId(connectionId);
-            if (userId != null)
+            var userId = await _connectionManager.GetUserByConnectionId(connectionId);
+            if (!string.IsNullOrEmpty(userId))
             {
                 return Ok();
             }

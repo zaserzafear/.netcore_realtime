@@ -13,3 +13,6 @@ services:
     ports:
       - "62765:80"
 
+  redis:
+    ports:
+      - "6379:6379"

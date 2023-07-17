@@ -1,36 +1,46 @@
-﻿using System.Collections.Concurrent;
+﻿using StackExchange.Redis;
 
 namespace Api
 {
     public class ChatConnectionManager
     {
-        private static readonly ConcurrentDictionary<string, string> ConnectedClients = new ConcurrentDictionary<string, string>();
+        private readonly ConnectionMultiplexer _redis;
+        private readonly IDatabase _database;
+        private readonly string connectedClientsKey = "";
 
-        public void AddConnection(string connectionId, string userId)
+        public ChatConnectionManager(string connectedClientsKey, string connectionString)
         {
-            ConnectedClients.TryAdd(connectionId, userId);
+            this.connectedClientsKey = connectedClientsKey;
+            _redis = ConnectionMultiplexer.Connect(connectionString);
+            _database = _redis.GetDatabase();
         }
 
-        public string? GetUserByConnectionId(string connectionId)
+        public async Task AddConnection(string connectionId, string userId)
         {
-            ConnectedClients.TryGetValue(connectionId, out var userId);
-            return userId;
+            await _database.HashSetAsync(connectedClientsKey, connectionId, userId);
         }
 
-        public IEnumerable<string> GetConnectionsByUserId(string userId)
+        public async Task<string?> GetUserByConnectionId(string connectionId)
         {
-            return ConnectedClients.Where(entry => entry.Value == userId).Select(entry => entry.Key);
+            var userId = await _database.HashGetAsync(connectedClientsKey, connectionId);
+            return userId.HasValue ? userId.ToString() : null;
         }
 
-        public void RemoveConnection(string connectionId)
+        public async Task<IEnumerable<string>> GetConnectionsByUserId(string userId)
         {
-            ConnectedClients.TryRemove(connectionId, out _);
+            var connections = await _database.HashKeysAsync(connectedClientsKey);
+            return connections.Where(connection => _database.HashGet(connectedClientsKey, connection) == userId).Select(connection => connection.ToString());
         }
 
-        public IDictionary<string, string> GetAllConnections()
+        public async Task RemoveConnection(string connectionId)
         {
-            return ConnectedClients.ToDictionary(entry => entry.Key, entry => entry.Value);
+            await _database.HashDeleteAsync(connectedClientsKey, connectionId);
         }
 
+        public async Task<IDictionary<string, string>> GetAllConnections()
+        {
+            var connections = await _database.HashGetAllAsync(connectedClientsKey);
+            return connections.ToDictionary(entry => entry.Name.ToString(), entry => entry.Value.ToString());
+        }
     }
 }

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
@@ -35,7 +36,12 @@ namespace Api
             builder.Services.Configure<JwtSetting>(builder.Configuration.GetSection(nameof(JwtSetting)));
 
             builder.Services.AddSignalR();
-            builder.Services.AddSingleton<ChatConnectionManager>();
+            builder.Services.Configure<RedisSetting>(builder.Configuration.GetSection(nameof(RedisSetting)));
+            builder.Services.AddSingleton<ChatConnectionManager>(provider =>
+            {
+                var redisSetting = provider.GetRequiredService<IOptions<RedisSetting>>().Value;
+                return new ChatConnectionManager(redisSetting.Chat.ConnectedClientsKey, redisSetting.Chat.ConnectionStrings);
+            });
 
             builder.Services.AddSingleton<JwtToken>();
             builder.Services.AddAuthentication(options =>
