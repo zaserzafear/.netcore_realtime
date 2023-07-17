@@ -16,3 +16,15 @@ services:
   redis:
     ports:
       - "6379:6379"
+
+  mariaDb:
+    volumes:
+      - ./MySql/data:/var/lib/mysql
+      - ./MySql/initdb:/docker-entrypoint-initdb.d
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=chat
+      - MYSQL_USER=chat_user
+      - MARIADB_PASSWORD=chat_password
+    ports:
+      - "3306:3306"

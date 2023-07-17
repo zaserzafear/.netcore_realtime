@@ -13,3 +13,8 @@ services:
       dockerfile: Web/Dockerfile
   redis:
     image: redis:7
+  mariaDb:
+    image: ${DOCKER_REGISTRY-}mariadb
+    build:
+      context: .
+      dockerfile: MySql/Dockerfile
