@@ -4,24 +4,12 @@ namespace Api.Models;
 
 public partial class ChatDBContext : DbContext
 {
-    public ChatDBContext()
-    {
-    }
-
     public ChatDBContext(DbContextOptions<ChatDBContext> options)
         : base(options)
     {
     }
 
     public virtual DbSet<tbl_user> tbl_users { get; set; }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        if (!optionsBuilder.IsConfigured)
-        {
-            optionsBuilder.UseMySql("name=ConnectionStrings:Chat", ServerVersion.Parse("11.0.2-mariadb"));
-        }
-    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

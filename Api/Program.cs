@@ -29,20 +29,20 @@ namespace Api
                 });
             });
 
-
-            var dbChat = builder.Configuration.GetSection(nameof(DatabaseChat)).Get<DatabaseChat>();
-
+            var dbChat = builder.Configuration.GetSection(nameof(DatabaseChat)).Get<DatabaseChat>()!;
+            var dbServerVersion = ServerVersion.AutoDetect(dbChat.Reader);
+            dbChat.ServerVersion = dbServerVersion.ToString();
             builder.Services.AddDbContext<ChatDBContext>(options =>
             {
-                options.UseMySql(dbChat!.Writer, ServerVersion.Parse(dbChat.ServerVersion));
+                options.UseMySql(builder.Configuration.GetConnectionString("Chat"), dbServerVersion);
             });
             builder.Services.AddScoped<ChatDBContext>(provider =>
             {
-                return new ChatDBContextWriter(dbChat!.Writer, dbChat.ServerVersion);
+                return new ChatDBContextWriter(dbChat.Writer, dbChat.ServerVersion);
             });
             builder.Services.AddScoped<ChatDBContextReader>(provider =>
             {
-                return new ChatDBContextReader(dbChat!.Reader, dbChat.ServerVersion);
+                return new ChatDBContextReader(dbChat.Reader, dbChat.ServerVersion);
             });
 
             builder.Services.AddControllers();
