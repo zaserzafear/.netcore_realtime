@@ -13,7 +13,7 @@ services:
     ports:
       - "62765:80"
 
-  redis:
+  redis-chat:
     ports:
       - "6379:6379"
 

@@ -11,7 +11,7 @@ services:
     build:
       context: .
       dockerfile: Web/Dockerfile
-  redis:
+  redis-chat:
     image: redis:7
   mariaDb:
     image: ${DOCKER_REGISTRY-}mariadb

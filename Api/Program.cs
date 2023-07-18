@@ -29,6 +29,8 @@ namespace Api
                 });
             });
 
+            builder.Services.AddHttpContextAccessor();
+
             var dbChat = builder.Configuration.GetSection(nameof(DatabaseChat)).Get<DatabaseChat>()!;
             var dbServerVersion = ServerVersion.AutoDetect(dbChat.Reader);
             dbChat.ServerVersion = dbServerVersion.ToString();

@@ -11,11 +11,13 @@ namespace Api
     {
         private readonly JwtSetting _jwtSetting;
         private readonly ILogger<JwtToken> _logger;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public JwtToken(IOptions<JwtSetting> jwtSetting, ILogger<JwtToken> logger)
+        public JwtToken(IOptions<JwtSetting> jwtSetting, ILogger<JwtToken> logger, IHttpContextAccessor httpContextAccessor)
         {
             _jwtSetting = jwtSetting.Value;
             _logger = logger;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public string GenerateJwtToken(JwtTokenBuildDto dto)
@@ -94,6 +96,19 @@ namespace Api
                 _logger.LogError(ex.Message);
                 return null;
             }
+        }
+
+        public JwtTokenBuildDto? ValidateAuthorizationHeader()
+        {
+            var authorizationHeader = _httpContextAccessor?.HttpContext?.Request.Headers["Authorization"].FirstOrDefault();
+            if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
+            {
+                return null;
+            }
+
+            var token = authorizationHeader.Substring("Bearer ".Length).Trim();
+            var jwt = ExtractJwtTokenFromHeader(token);
+            return jwt;
         }
     }
 }

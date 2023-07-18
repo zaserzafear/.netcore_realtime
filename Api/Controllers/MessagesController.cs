@@ -29,16 +29,14 @@ namespace Api.Controllers
         }
 
         [HttpPost("SetConnectionIdTouser")]
-        public async Task<IActionResult> SetConnectionIdTouser([FromHeader(Name = "Authorization")] string authorizationHeader, [FromBody] SignalRConnectionId signalRConnectionId)
+        public async Task<IActionResult> SetConnectionIdTouser([FromBody] SignalRConnectionId signalRConnectionId)
         {
-            if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
+            var jwt = _jwtToken.ValidateAuthorizationHeader();
+            if (jwt == null)
             {
-                return BadRequest("Invalid authorization header");
+                return BadRequest("Invalid authorization header or JWT token");
             }
 
-            var token = authorizationHeader.Substring("Bearer ".Length).Trim();
-
-            var jwt = _jwtToken.ExtractJwtTokenFromHeader(token)!;
             var userId = jwt.sub;
             var connectionId = signalRConnectionId.connectionId;
 
@@ -48,16 +46,14 @@ namespace Api.Controllers
         }
 
         [HttpPost("SendMessage")]
-        public async Task<IActionResult> SendMessage([FromHeader(Name = "Authorization")] string authorizationHeader, [FromBody] MessageDto messageDto)
+        public async Task<IActionResult> SendMessage([FromBody] MessageDto messageDto)
         {
-            if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
+            var jwt = _jwtToken.ValidateAuthorizationHeader();
+            if (jwt == null)
             {
-                return BadRequest("Invalid authorization header");
+                return BadRequest("Invalid authorization header or JWT token");
             }
 
-            var token = authorizationHeader.Substring("Bearer ".Length).Trim();
-
-            var jwt = _jwtToken.ExtractJwtTokenFromHeader(token)!;
             var userName = jwt.name;
 
             var sendToUser = messageDto.sendToUserInput;
