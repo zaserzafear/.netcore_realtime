@@ -1,6 +1,7 @@
 ﻿using Api.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers
 {
@@ -22,7 +23,13 @@ namespace Api.Controllers
         [HttpPost("Login")]
         public IActionResult Login([FromBody] AuthRequest auth)
         {
-            var userMatch = _chatDBContextReader.tbl_users.FirstOrDefault(u => u.username == auth.username && u.password == auth.password);
+            var userMatch = _chatDBContextReader
+                .tbl_users
+                .AsNoTracking()
+                .FirstOrDefault(
+                u => u.username == auth.username
+                && u.password == auth.password
+                );
             var authResponse = new AuthResponse();
 
             if (userMatch != null)
@@ -44,26 +51,17 @@ namespace Api.Controllers
         }
 
         [HttpGet("ValidateToken")]
-        public IActionResult ValidateToken([FromHeader(Name = "Authorization")] string authorizationHeader)
+        public IActionResult ValidateToken()
         {
-            if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
-            {
-                return BadRequest("Invalid authorization header");
-            }
-
-            var token = authorizationHeader.Substring("Bearer ".Length).Trim();
-
-            var dto = _jwtToken.ExtractJwtTokenFromHeader(token);
             var authResponse = new AuthResponse();
 
-            if (dto == null)
+            var jwt = _jwtToken.ValidateAuthorizationHeader();
+            if (jwt == null)
             {
-                authResponse.error_message = "Unable to extract token information";
-                return BadRequest(authResponse);
+                return BadRequest("Invalid authorization header or JWT token");
             }
 
-            var accessToken = _jwtToken.GenerateJwtToken(dto);
-
+            var accessToken = _jwtToken.GenerateJwtToken(jwt);
             if (string.IsNullOrEmpty(accessToken))
             {
                 authResponse.error_message = "Unable to generate new token";
